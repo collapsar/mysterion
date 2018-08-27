@@ -422,20 +422,37 @@ describe('connection', () => {
           actionLoopers: {}
         }
         const committed = await executeAction(type.SET_CONNECTION_STATUS, state, ConnectionStatusEnum.CONNECTED)
-        expect(committed).to.have.lengthOf(3)
+        expect(committed).to.have.lengthOf(4)
         expect(committed[0]).to.eql({
           key: type.SET_CONNECTION_STATUS,
           value: ConnectionStatusEnum.CONNECTED
         })
-        expect(committed[1].key).to.eql(type.SET_ACTION_LOOPER)
-        expect(committed[1].value.action).to.eql(type.CONNECTION_STATISTICS)
-        const looper = committed[1].value.looper
+        expect(committed[1].key).to.eql(type.CONNECTION_IP)
+        expect(committed[1].value).to.eql('Refreshing...')
+        expect(committed[2].key).to.eql(type.SET_ACTION_LOOPER)
+        expect(committed[2].value.action).to.eql(type.CONNECTION_STATISTICS)
+        const looper = committed[2].value.looper
         expect(looper).to.be.an.instanceof(FunctionLooper)
         expect(looper.isRunning()).to.eql(true)
-        expect(committed[2]).to.eql({
+        expect(committed[3]).to.eql({
           key: type.CONNECTION_STATISTICS,
           value: new ConnectionStatisticsDTO({ duration: 1 })
         })
+      })
+
+      it('sets ip status to Refreshing when state changes to Disconnected', async () => {
+        const committed = await executeAction(type.SET_CONNECTION_STATUS, {}, ConnectionStatusEnum.NOT_CONNECTED)
+
+        expect(committed).to.eql([
+          {
+            key: type.SET_CONNECTION_STATUS,
+            value: ConnectionStatusEnum.NOT_CONNECTED
+          },
+          {
+            key: type.CONNECTION_IP,
+            value: 'Refreshing...'
+          }
+        ])
       })
 
       it('stops looping statistics when changing state from connected', async () => {
